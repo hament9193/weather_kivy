@@ -5,7 +5,8 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.properties import ObjectProperty
 from kivy.uix.listview import ListItemButton
 from kivy.factory import Factory
-# factory is to get instance of dynamic class (i.e. custom widget)
+# factory is to get instance of dynamic class (i.e. class cerated without declaration)
+from kivy.properties import ObjectProperty, ListProperty, StringProperty, NumericProperty
 
 token = "bb233f234bc3eb3df4ecb30859da8d9e"
 class AddLocationForm(BoxLayout):
@@ -24,9 +25,9 @@ class AddLocationForm(BoxLayout):
     def found_location(self, request, data):
         data = json.loads(data.decode()) if not isinstance(data, dict) else data
         if data and 'list' in data:
-            # cities = [(d['name'], d['sys']['country']) for d in data['list']]
-            cities = ["{} ({})".format(d['name'], d['sys']['country'])
-                      for d in data['list']]
+            cities = [(d['name'], d['sys']['country']) for d in data['list']]
+            # cities = ["{} ({})".format(d['name'], d['sys']['country'])
+            #           for d in data['list']]
             self.search_results.item_strings = cities
             del self.search_results.adapter.data[:]
             # self.search_results.adapter.data.clear() #introduced in python3
@@ -35,11 +36,38 @@ class AddLocationForm(BoxLayout):
         else:
             del self.search_results.adapter.data[:]
             # self.search_results.adapter.data.clear() #introduced in python3
-            self.search_results.adapter.data.extend(None)
             self.search_results._trigger_reset_populate()
 
+        """ custom function called args_converter.This function should accept two values: the index of the item being rendered,
+        and the item itself.Kivy will call this function repeatedly for each item in the underlying data list
+        NEED to set arg converter for adapter in kv file"""
+    def args_converter(self, index, data_item):
+        city, country = data_item
+        return {'location': (city, country)}
+
 class LocationButton(ListItemButton):
-    pass
+    location = ListProperty()
+
+
+class CurrentWeather(BoxLayout):
+    location = ListProperty(['New York', 'US'])
+    conditions = StringProperty()
+    temp = NumericProperty()
+    temp_min = NumericProperty()
+    temp_max = NumericProperty()
+
+    def update_weather(self):
+        weather_template = "http://api.openweathermap.org/data/2.5/" +\
+                           "weather?q={},{}&units=metric&APPID=" + token
+        weather_url = weather_template.format(*self.location)
+        request = UrlRequest(weather_url, self.weather_retrieved)
+
+    def weather_retrieved(self, request, data):
+        data = json.loads(data.decode()) if not isinstance(data, dict) else data
+        self.conditions = data['weather'][0]['description']
+        self.temp = data['main']['temp']
+        self.temp_min = data['main']['temp_min']
+        self.temp_max = data['main']['temp_max']
 
 class WeatherRoot(BoxLayout):
     addlocation = ObjectProperty()
@@ -47,13 +75,12 @@ class WeatherRoot(BoxLayout):
 
     def show_current_weather(self, location=None):
         self.clear_widgets()
-        if location is None and self.current_weather is None:
-            location = "New York (US)"
+        if self.current_weather is None:
+            self.current_weather = CurrentWeather()
         if location is not None:
-            self.current_weather = Factory.CurrentWeather()
             self.current_weather.location = location
+        self.current_weather.update_weather()
         self.add_widget(self.current_weather)
-
 
     def show_add_location_form(self):
         self.clear_widgets()

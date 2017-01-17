@@ -35,7 +35,10 @@ WeatherRoot:
     ListView:
         id: search_results_list
         adapter:
-            ListAdapter(data=[], cls=main.LocationButton)
+            ListAdapter(
+            data=[],
+            cls=main.LocationButton,
+            args_converter=root.args_converter)
 # END LISTVIEW
     Button:
         height: "40dp"
@@ -44,28 +47,31 @@ WeatherRoot:
         on_press: app.root.show_current_weather(None)
 
 <LocationButton>:
-    on_press: app.root.show_current_weather(self.text)
+    on_press: app.root.show_current_weather(self.location)
+    text: "{} ({})".format(self.location[0], self.location[1])
+    height: "40dp"
+    size_hint_y: None
     background_color: [0,0,0,1] #black
     color: [1,1,1,1] #white
 
-<CurrentWeather@BoxLayout>:
-    location: ""
-    conditions: None
-    temp: None
-    temp_min: None
-    temp_max: None
+# BEGIN CURRENT_WEATHER
+<CurrentWeather>:
     orientation: "vertical"
     BoxLayout:
         Label:
-            text: root.location
-#        Label:
-#            text: root.conditions
-#        Label:
-#            text: root.temp
-#        Label:
-#            text: root.temp_min
-#        Label:
-#            text: root.temp_max
+            text: "{} ({})".format(root.location[0], root.location[1])
+            font_size: "30dp"
+        Label:
+            text: "{}".format(root.temp)
+            font_size: "30dp"
+    Label:
+        text: root.conditions
+    BoxLayout:
+        orientation: "horizontal"
+        Label:
+            text: "Low: {}".format(root.temp_min)
+        Label:
+            text: "High: {}".format(root.temp_max)
     BoxLayout:
         orientation: "horizontal"
         size_hint_y: None
@@ -75,3 +81,4 @@ WeatherRoot:
             on_press: app.root.show_add_location_form()
         Button:
             text: "Forecast"
+# END CURRENT_WEATHER
