@@ -40,47 +40,6 @@ WeatherRoot:
         text: "Cancel"
         on_press: app.root.show_current_weather(None)
 
-<CurrentWeather>:
-    orientation: "vertical"
-    BoxLayout:
-        Label:
-            text: "{} ({})".format(root.location[0], root.location[1])
-            font_size: "30dp"
-        Label:
-            text: "{}".format(root.temp)
-            font_size: "30dp"
-
-    # BEGIN CONDITIONS
-    BoxLayout:
-        orientation: "horizontal"
-        Label:
-            text: root.conditions
-        AsyncImage:
-            source: root.conditions_image
-    # END CONDITIONS
-    BoxLayout:
-        orientation: "horizontal"
-        Label:
-            text: "Low: {}".format(root.temp_min)
-        Label:
-            text: "High: {}".format(root.temp_max)
-    BoxLayout:
-        orientation: "horizontal"
-        size_hint_y: None
-        height: "40dp"
-        Button:
-            text: "Add Location"
-            on_press: app.root.show_add_location_form()
-        Button:
-            text: "Forecast"
-# END CURRENT_WEATHER
-
-<LocationButton>:
-    text: "{} ({})".format(self.location[0], self.location[1])
-    height: "40dp"
-    size_hint_y: None
-    on_press: app.root.show_current_weather(self.location)
-
 <Locations@BoxLayout>:
     orientation: "vertical"
     locations_list: locations_list
@@ -98,3 +57,45 @@ WeatherRoot:
         Button:
             text: "Add Location"
             on_press: app.root.show_add_location_form()
+        # BEGIN SETTINGS_BUTTON
+        Button:
+            text: "Settings"
+            on_press: app.open_settings()
+        # END SETTINGS_BUTTON
+
+<CurrentWeather>:
+    orientation: "vertical"
+    BoxLayout:
+        Label:
+            text: "{} ({})".format(root.location[0], root.location[1])
+            font_size: "30dp"
+        Label:
+            text: "{}".format(root.temp)
+            font_size: "30dp"
+    BoxLayout:
+        orientation: "horizontal"
+        Label:
+            text: root.conditions
+        AsyncImage:
+            source: root.conditions_image
+    BoxLayout:
+        orientation: "horizontal"
+        Label:
+            text: "Low: {}".format(root.temp_min)
+        Label:
+            text: "High: {}".format(root.temp_max)
+    BoxLayout:
+        orientation: "horizontal"
+        size_hint_y: None
+        height: "40dp"
+        Button:
+            text: "Locations"
+            on_press: app.root.show_locations()
+        Button:
+            text: "Forecast"
+
+<LocationButton>:
+    text: "{} ({})".format(self.location[0], self.location[1])
+    height: "40dp"
+    size_hint_y: None
+    on_press: app.root.show_current_weather(self.location)
