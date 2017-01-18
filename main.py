@@ -1,3 +1,4 @@
+from kivy.gesture import Gesture
 from kivy.network.urlrequest import UrlRequest
 import json
 
@@ -10,6 +11,7 @@ from kivy.properties import (ObjectProperty, ListProperty, StringProperty,
 from kivy.uix.listview import ListItemButton
 from kivy.factory import Factory
 from kivy.storage.jsonstore import JsonStore
+from gesture_box import GestureBox, gestures
 
 token = "bb233f234bc3eb3df4ecb30859da8d9e"
 
@@ -41,7 +43,7 @@ class AddLocationForm(BoxLayout):
         self.search_results._trigger_reset_populate()
 
 
-class CurrentWeather(BoxLayout):
+class CurrentWeather(GestureBox):
     location = ListProperty(['New York', 'US'])
     conditions = StringProperty()
     conditions_image = StringProperty()
@@ -72,7 +74,18 @@ class CurrentWeather(BoxLayout):
         self.temp_min = data['main']['temp_min']
         self.temp_max = data['main']['temp_max']
 
-class Forecast(BoxLayout):
+
+    def on_touch_up(self, touch):
+        if 'gesture_path' in touch.ud:
+            gesture = Gesture()
+            gesture.add_stroke(touch.ud['gesture_path'])
+            gesture.normalize()
+            match = gestures.find(gesture, minscore=0.90)
+            if match:
+                self.dispatch('on_{}'.format(match[1].name))
+        super(GestureBox, self).on_touch_up(touch)
+
+class Forecast(GestureBox):
     location = ListProperty(['New York', 'US'])
     forecast_container = ObjectProperty()
     def update_weather(self):
@@ -94,6 +107,16 @@ class Forecast(BoxLayout):
             label.temp_min = day['temp']['min']
             label.temp_max = day['temp']['max']
             self.forecast_container.add_widget(label)
+
+    def on_touch_up(self, touch):
+        if 'gesture_path' in touch.ud:
+            gesture = Gesture()
+            gesture.add_stroke(touch.ud['gesture_path'])
+            gesture.normalize()
+            match = gestures.find(gesture, minscore=0.90)
+            if match:
+                self.dispatch('on_{}'.format(match[1].name))
+        super(GestureBox, self).on_touch_up(touch)
 
 
 class WeatherRoot(BoxLayout):
