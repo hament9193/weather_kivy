@@ -15,7 +15,7 @@ from gesture_box import GestureBox, gestures
 
 token = "bb233f234bc3eb3df4ecb30859da8d9e"
 
-
+# this branch has custom gestures and custom events to handle these gestures
 def locations_args_converter(index, data_item):
     city, country = data_item
     return {'location': (city, country)}
