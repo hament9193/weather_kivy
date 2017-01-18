@@ -12,6 +12,8 @@ from kivy.factory import Factory
 # widget for dynamic class is made with @ notation
 from kivy.properties import ObjectProperty, ListProperty, StringProperty, NumericProperty
 
+# using animations instead of images
+
 token = "bb233f234bc3eb3df4ecb30859da8d9e"
 class AddLocationForm(BoxLayout):
     search_input = ObjectProperty()
