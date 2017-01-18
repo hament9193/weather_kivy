@@ -1,7 +1,9 @@
+from kivy.factory import Factory
 from kivy.network.urlrequest import UrlRequest
 import json
 
 from kivy.app import App
+from kivy.storage.jsonstore import JsonStore
 from kivy.uix.boxlayout import BoxLayout
 # BEGIN IMPORT
 from kivy.properties import ObjectProperty, ListProperty, StringProperty, NumericProperty
@@ -31,9 +33,9 @@ class AddLocationForm(BoxLayout):
         self.search_results.adapter.data.extend(cities)
         self.search_results._trigger_reset_populate()
 
-    def args_converter(self, index, data_item):
-        city, country = data_item
-        return {'location': (city, country)}
+def locations_args_converter(index, data_item):
+    city, country = data_item
+    return {'location': (city, country)}
 
 
 class CurrentWeather(BoxLayout):
@@ -63,16 +65,32 @@ class CurrentWeather(BoxLayout):
 
 class WeatherRoot(BoxLayout):
     current_weather = ObjectProperty()
+    locations = ObjectProperty()
+
+    def __init__(self, **kwargs):
+        super(WeatherRoot, self).__init__(**kwargs)
+        self.store = JsonStore("weather_store.json")
+        if self.store.exists('locations'):
+            current_location = self.store.get("locations")["current_location"]
+            self.show_current_weather(current_location)
+
+    def show_locations(self):
+        self.clear_widgets()
+        self.add_widget(self.locations)
 
     def show_current_weather(self, location=None):
         self.clear_widgets()
-
         if self.current_weather is None:
             self.current_weather = CurrentWeather()
-
+        if self.locations is None:
+            self.locations = Factory.Locations()
         if location is not None:
             self.current_weather.location = location
-
+            if location not in self.locations.locations_list.adapter.data:
+                self.locations.locations_list.adapter.data.append(location)
+                self.locations.locations_list._trigger_reset_populate()
+                self.store.put("locations", locations=list(self.locations.locations_list.adapter.data),
+                               current_location=location)
         self.current_weather.update_weather()
         self.add_widget(self.current_weather)
 

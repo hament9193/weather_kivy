@@ -1,15 +1,11 @@
-# BEGIN IMPORTS
 #: import main main
 #: import ListAdapter kivy.adapters.listadapter.ListAdapter
-# END IMPORTS
 
 
 WeatherRoot:
 
 <WeatherRoot>:
-    addlocation: addlocationform
-    AddLocationForm:
-        id: addlocationform
+    AddLocationForm
 
 <AddLocationForm>:
     orientation: "vertical"
@@ -31,30 +27,19 @@ WeatherRoot:
         Button:
             text: "Current Location"
             size_hint_x: 25
-# BEGIN LISTVIEW
     ListView:
         id: search_results_list
         adapter:
             ListAdapter(
             data=[],
             cls=main.LocationButton,
-            args_converter=root.args_converter)
-# END LISTVIEW
+            args_converter=main.locations_args_converter)
     Button:
         height: "40dp"
         size_hint_y: None
         text: "Cancel"
         on_press: app.root.show_current_weather(None)
 
-<LocationButton>:
-    on_press: app.root.show_current_weather(self.location)
-    text: "{} ({})".format(self.location[0], self.location[1])
-    height: "40dp"
-    size_hint_y: None
-    background_color: [0,0,0,1] #black
-    color: [1,1,1,1] #white
-
-# BEGIN CURRENT_WEATHER
 <CurrentWeather>:
     orientation: "vertical"
     BoxLayout:
@@ -64,12 +49,15 @@ WeatherRoot:
         Label:
             text: "{}".format(root.temp)
             font_size: "30dp"
+
+    # BEGIN CONDITIONS
     BoxLayout:
         orientation: "horizontal"
         Label:
             text: root.conditions
         AsyncImage:
             source: root.conditions_image
+    # END CONDITIONS
     BoxLayout:
         orientation: "horizontal"
         Label:
@@ -87,65 +75,26 @@ WeatherRoot:
             text: "Forecast"
 # END CURRENT_WEATHER
 
-# BEGIN CONDITIONS
-<Conditions>:
-    Label:
-        text: root.conditions
-# END CONDITIONS
+<LocationButton>:
+    text: "{} ({})".format(self.location[0], self.location[1])
+    height: "40dp"
+    size_hint_y: None
+    on_press: app.root.show_current_weather(self.location)
 
-<UnknownConditions@Conditions>:
-    conditions: ""
-    canvas:
-        Color:
-            rgb: [0.2, 0.2, 0.2]
-        Ellipse:
-            pos: self.pos
-            size: self.size
-    Label:
-        text: root.conditions
-
-
-<ClearConditions@Conditions>:
-    conditions: ""
-    canvas:
-        Color:
-            rgb: [0.8, 0.7, 0.3]
-        Line:
-            cap: "round"
-            width: 3
-            points:
-                [self.center_x - (self.height / 2),
-                self.center_y,
-                self.center_x + (self.height / 2),
-                self.center_y]
-        Line:
-            cap: "round"
-            width: 3
-            points:
-                [self.center_x,
-                self.center_y - (self.height / 2),
-                self.center_x,
-                self.center_y + (self.height / 2)]
-        Line:
-            cap: "round"
-            width: 3
-            points:
-                [self.center_x - (self.height * .35355),
-                self.center_y - (self.height * .35355),
-                self.center_x + (self.height * .35355),
-                self.center_y + (self.height * .35355)]
-        Line:
-            cap: "round"
-            width: 3
-            points:
-                [self.center_x - (self.height * .35355),
-                self.center_y + (self.height * .35355),
-                self.center_x + (self.height * .35355),
-                self.center_y - (self.height * .35355)]
-        Color:
-            rgb: [0.6, 0.5, 0.0]
-        Ellipse:
-            pos: self.center_x - ((self.height - 40) / 2), self.pos[1] + 20
-            size: [self.height - 40, self.height - 40]
-    Label:
-        text: root.conditions
+<Locations@BoxLayout>:
+    orientation: "vertical"
+    locations_list: locations_list
+    ListView:
+        id: locations_list
+        adapter:
+            ListAdapter(
+            data=[],
+            cls=main.LocationButton,
+            args_converter=main.locations_args_converter)
+    BoxLayout:
+        orientation: "horizontal"
+        size_hint_y: None
+        height: "40dp"
+        Button:
+            text: "Add Location"
+            on_press: app.root.show_add_location_form()
