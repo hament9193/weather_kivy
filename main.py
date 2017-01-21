@@ -5,15 +5,21 @@ import datetime
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
 from kivy.properties import (ObjectProperty, ListProperty, StringProperty,
-                             NumericProperty)
+    NumericProperty)
 from kivy.uix.listview import ListItemButton
 from kivy.factory import Factory
 from kivy.storage.jsonstore import JsonStore
 from kivy.uix.modalview import ModalView
 from kivy.clock import Clock
 
-token = "bb233f234bc3eb3df4ecb30859da8d9e"
+# BEGIN IMPORTS
+from plyer import gps
+from kivy.clock import Clock, mainthread
+from kivy.uix.popup import Popup
+from kivy.uix.label import Label
+# END IMPORTS
 
+token = "bb233f234bc3eb3df4ecb30859da8d9e"
 
 def locations_args_converter(index, data_item):
     city, country = data_item
@@ -38,8 +44,30 @@ class AddLocationForm(ModalView):
         cities = [(d['name'], d['sys']['country']) for d in data['list']]
         self.search_results.item_strings = cities
         del self.search_results.adapter.data[:]
+
         self.search_results.adapter.data.extend(cities)
         self.search_results._trigger_reset_populate()
+
+    def current_location(self):
+        try:
+            gps.configure(on_location=self.on_location)
+            gps.start()
+        except NotImplementedError:
+            popup = Popup(title="GPS Error",
+                content=Label(text="GPS support is not implemented on your platform")
+                ).open()
+            Clock.schedule_once(lambda d: popup.dismiss(), 3)
+
+# BEGIN ON_LOCATION
+    @mainthread
+    def on_location(self, **kwargs):
+        search_template = "http://api.openweathermap.org/data/2.5/" +\
+         "weather?lat={}&lon={}&APPID=" + token
+        search_url = search_template.format(kwargs['lat'], kwargs['lon'])
+        data = requests.get(search_url).json()
+        location = (data['sys']['country'], data['name'])
+        WeatherApp.get_running_app().root.show_current_weather(location)
+# END ON_LOCATION
 
 
 class CurrentWeather(BoxLayout):
@@ -80,6 +108,7 @@ class Forecast(BoxLayout):
 
     def weather_retrieved(self, request, data):
         data = json.loads(data.decode()) if not isinstance(data, dict) else data
+
         self.forecast_container.clear_widgets()
         for day in data['list']:
             label = Factory.ForecastLabel()
@@ -100,7 +129,6 @@ class WeatherRoot(BoxLayout):
     locations = ObjectProperty()
     add_location_form = ObjectProperty()
 
-    # BEGIN INIT
     def __init__(self, **kwargs):
         super(WeatherRoot, self).__init__(**kwargs)
         self.store = JsonStore("weather_store.json")
@@ -109,19 +137,14 @@ class WeatherRoot(BoxLayout):
             self.locations.locations_list.adapter.data.extend(locations['locations'])
             current_location = locations["current_location"]
             self.show_current_weather(current_location)
-        else:
-            Clock.schedule_once(lambda dt: self.show_add_location_form())
 
-    # END INIT
-
-    # BEGIN SHOW_CURRENT_WEATHER
     def show_current_weather(self, location):
         if location not in self.locations.locations_list.adapter.data:
             self.locations.locations_list.adapter.data.append(location)
             self.locations.locations_list._trigger_reset_populate()
             self.store.put("locations",
-                           locations=list(self.locations.locations_list.adapter.data),
-                           current_location=location)
+                locations=list(self.locations.locations_list.adapter.data),
+                current_location=location)
 
         self.current_weather.location = location
         self.forecast.location = location
@@ -131,7 +154,6 @@ class WeatherRoot(BoxLayout):
         self.carousel.load_slide(self.current_weather)
         if self.add_location_form is not None:
             self.add_location_form.dismiss()
-            # END SHOW_CURRENT_WEATHER
 
     def show_add_location_form(self):
         self.add_location_form = AddLocationForm()
@@ -139,6 +161,7 @@ class WeatherRoot(BoxLayout):
 
 
 class WeatherApp(App):
+
     def build_config(self, config):
         config.setdefaults('General', {'temp_type': "Metric"})
 
@@ -152,9 +175,8 @@ class WeatherApp(App):
                     "options": ["Metric", "Imperial"]
                 }
             ]"""
-                                )
+            )
 
-    # BEGIN CONFIG
     def on_config_change(self, config, section, key, value):
         if config is self.config and key == "temp_type":
             try:
@@ -162,8 +184,11 @@ class WeatherApp(App):
                 self.root.forecast.update_weather()
             except AttributeError:
                 pass
-                # END CONFIG
 
+    # BEGIN PAUSE
+    def on_pause(self):
+        return True
+    # END PAUSE
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     WeatherApp().run()
